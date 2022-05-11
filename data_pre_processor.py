@@ -45,7 +45,7 @@ def lat_lon_str_parser(column, data):
     This function parses to string and finds the most frequent values within the
     array to return a single value of latitude or longitude. This can be used
     to replace the string of array in the latitude or longitude by a single value.
-    
+
     Example of data: "['0.000000', '0.000000', '0.000000', '0.000000']"
     Parameters
     column: The column of the dataframe which needs to be parsed
@@ -54,7 +54,7 @@ def lat_lon_str_parser(column, data):
     try:
         if type(data[column].iloc[0]) != str:
             return data[column]
-        
+
         for row in range(len(data)):
             try:
                 item = data[column].iloc[row]
@@ -62,17 +62,17 @@ def lat_lon_str_parser(column, data):
                     lat_list.append(float(item))
                 else:
                     values = item.split(",")
-                    res = float(max(set(values), key=values.count).split("'")[1])
+                    res = float(
+                        max(set(values), key=values.count).split("'")[1])
                     lat_list.append(res)
             except AttributeError:
                 lat_list.append(np.nan)
-                
+
     except TypeError as err:
         print(f"[-] Type error: {err}")
         return []
-    
-    return lat_list
 
+    return lat_list
 
 
 def sog_cog_to_num(column, data):
@@ -80,6 +80,7 @@ def sog_cog_to_num(column, data):
     Some of the data collected from the IMU sensors are sent as string of array.
     We need to parse the string and extract the array with numerical values.
 
+    Example of data: "['0.00', '0.00', '0.00', '0.00', '0.00', '0.00']"
     Parameters
     column: The column of the dataframe which needs to be parsed.
     """
@@ -91,6 +92,32 @@ def sog_cog_to_num(column, data):
                 num = float(data[column].iloc[row].split(
                     "[")[1].split("]")[0].split(",")[i].split("'")[1])
                 row_list.append(num)
+            except AttributeError:
+                row_list.append(np.nan)
+
+        return_list.append(row_list)
+
+    return return_list
+
+
+def label_parser(column, data):
+    """
+    The label of data collected is in string format. This function parses
+    the string into individual string values. The output is an array of string 
+    values which tells the road condition.
+
+    Example of data: "['Roughroad', 'Roughroad', 'Roughroad', 'Roughroad']"
+    Parameters
+    column: The column of the dataframe which needs to be parsed.
+    """
+    return_list = []
+    for row in range(len(data)):
+        row_list = []
+        for i in range(1000):
+            try:
+                value = data[column][row].split("[")[1].split("]")[
+                    0].split(",")[i].split("'")[1]
+                row_list.append(value)
             except AttributeError:
                 row_list.append(np.nan)
 
@@ -122,8 +149,9 @@ def pre_processor(df,
                   str_arrays=['SogAcc', 'CogAcc', 'AcX', 'AcY',
                               'AcZ', 'GcX', 'GcY', 'GcZ', 'Tmp',
                               'Time', 'B', 'A'],
-                  lat_lon=["LonAcc", "LatAcc"],
-                  cog_sog=["CogAcc", "SogAcc"],
+                  label_array=['Label'],
+                  lat_lon=[],
+                  cog_sog=[],
                   export=False,
                   export_name=None):
     """
@@ -164,12 +192,18 @@ def pre_processor(df,
 
     try:
         for col in lat_lon:
+            print(col)
             data[col] = lat_lon_str_parser(col, data=data)
 
+        for col in label_array:
+            data[col] = label_parser(col, data=data)
+
         for col in cog_sog:
+            print(col)
             data[col] = sog_cog_to_num(col, data=data)
 
         for col in str_arrays:
+            print(col)
             data[col] = str_to_num_parser(col, data=data)
 
         if export:
