@@ -1,12 +1,11 @@
 try:
     from matplotlib import pyplot as plt
-    from prettytable import PrettyTable
+    #from prettytable import PrettyTable
     import numpy as np
     import pandas as pd
 except ModuleNotFoundError as err:
     print(f"[-] Could not find module: {err}")
     print(f"[-] Try pip install {err} to install the package")
-
 
 def get_data_types(dataframe_object):
     """
@@ -45,7 +44,7 @@ def lat_lon_str_parser(column, data):
     This function parses to string and finds the most frequent values within the
     array to return a single value of latitude or longitude. This can be used
     to replace the string of array in the latitude or longitude by a single value.
-
+    
     Example of data: "['0.000000', '0.000000', '0.000000', '0.000000']"
     Parameters
     column: The column of the dataframe which needs to be parsed
@@ -54,7 +53,7 @@ def lat_lon_str_parser(column, data):
     try:
         if type(data[column].iloc[0]) != str:
             return data[column]
-
+        
         for row in range(len(data)):
             try:
                 item = data[column].iloc[row]
@@ -62,24 +61,24 @@ def lat_lon_str_parser(column, data):
                     lat_list.append(float(item))
                 else:
                     values = item.split(",")
-                    res = float(
-                        max(set(values), key=values.count).split("'")[1])
+                    res = float(max(set(values), key=values.count).split("'")[1])
                     lat_list.append(res)
             except AttributeError:
                 lat_list.append(np.nan)
-
+                
     except TypeError as err:
         print(f"[-] Type error: {err}")
         return []
-
+    
     return lat_list
+
 
 
 def sog_cog_to_num(column, data):
     """
     Some of the data collected from the IMU sensors are sent as string of array.
     We need to parse the string and extract the array with numerical values.
-
+    
     Example of data: "['0.00', '0.00', '0.00', '0.00', '0.00', '0.00']"
     Parameters
     column: The column of the dataframe which needs to be parsed.
@@ -89,8 +88,7 @@ def sog_cog_to_num(column, data):
         row_list = []
         for i in range(1000):
             try:
-                num = float(data[column].iloc[row].split(
-                    "[")[1].split("]")[0].split(",")[i].split("'")[1])
+                num = float(data[column].iloc[row].split("[")[1].split("]")[0].split(",")[i].split("'")[1])
                 row_list.append(num)
             except AttributeError:
                 row_list.append(np.nan)
@@ -115,8 +113,7 @@ def label_parser(column, data):
         row_list = []
         for i in range(1000):
             try:
-                value = data[column][row].split("[")[1].split("]")[
-                    0].split(",")[i].split("'")[1]
+                value = data[column][row].split("[")[1].split("]")[0].split(",")[i].split("'")[1]
                 row_list.append(value)
             except AttributeError:
                 row_list.append(np.nan)
@@ -146,10 +143,10 @@ def str_to_num_parser(column, data):
 
 
 def pre_processor(df,
-                  str_arrays=['SogAcc', 'CogAcc', 'AcX', 'AcY',
+                  str_arrays=['SogAcc', 'CogAcc','AcX', 'AcY',
                               'AcZ', 'GcX', 'GcY', 'GcZ', 'Tmp',
                               'Time', 'B', 'A'],
-                  label_array=['Label'],
+                  label_array = ['Label'],
                   lat_lon=[],
                   cog_sog=[],
                   export=False,
@@ -194,10 +191,11 @@ def pre_processor(df,
         for col in lat_lon:
             print(col)
             data[col] = lat_lon_str_parser(col, data=data)
-
+        
         for col in label_array:
+            print(col)
             data[col] = label_parser(col, data=data)
-
+            
         for col in cog_sog:
             print(col)
             data[col] = sog_cog_to_num(col, data=data)
@@ -205,7 +203,7 @@ def pre_processor(df,
         for col in str_arrays:
             print(col)
             data[col] = str_to_num_parser(col, data=data)
-
+        
         if export:
             if export_name == None:
                 export_name = "unnamed"
@@ -217,3 +215,4 @@ def pre_processor(df,
         return pd.DataFrame()
 
     return data
+
